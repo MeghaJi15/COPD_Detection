@@ -47,7 +47,11 @@ st.markdown("""
 @st.cache_resource
 def load_model():
     try:
-        model = tf.keras.models.load_model("lung_xray_model_fixed.h5", compile=False)
+        model = tf.keras.models.load_model(
+            "lung_xray_model_fixed.h5",
+            compile=False,
+            safe_mode=False
+        )
         return model
     except Exception as e:
         st.error(f"Error loading model: {e}")
