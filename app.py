@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from PIL import Image, ImageOps
 import time
 
@@ -45,9 +46,8 @@ st.markdown("""
 # -----------------------------
 @st.cache_resource
 def load_model():
-    # Adding a small delay to simulate loading or handle complex models
     try:
-        model = tf.keras.models.load_model("lung_xray_model.keras")
+        model = tf.keras.models.load_model("lung_xray_model.keras", compile=False)
         return model
     except Exception as e:
         st.error(f"Error loading model: {e}")
@@ -61,14 +61,23 @@ model = load_model()
 IMG_SIZE = 224
 
 def preprocess_image(image):
-    # Convert to RGB if it's grayscale or RGBA
+    
+    # Convert to RGB if grayscale
     if image.mode != "RGB":
         image = image.convert("RGB")
     
-    image = image.resize((IMG_SIZE, IMG_SIZE))
+    # Resize
+    image = ImageOps.fit(image, (IMG_SIZE, IMG_SIZE))
+    
+    # Convert to numpy
     image = np.array(image)
-    image = image / 255.0
+    
+    # MobileNetV2 preprocessing
+    image = preprocess_input(image)
+    
+    # Add batch dimension
     image = np.expand_dims(image, axis=0)
+    
     return image
 
 # -----------------------------
@@ -113,16 +122,24 @@ with col2:
 # Prediction Logic
 # -----------------------------
 if uploaded_file is not None:
+    
     processed = preprocess_image(image)
     
     if st.button("Analyze X-ray"):
+        
         if model is None:
             st.error("Model not loaded. Check your 'lung_xray_model.keras' file.")
+        
         else:
             with st.spinner('Analyzing patterns in pulmonary tissue...'):
-                # Simulate a slight delay for better UX (feels like "thinking")
-                time.sleep(1.5) 
-                prediction = model.predict(processed)[0][0]
+                
+                time.sleep(1.5)
+                
+                try:
+                    prediction = model.predict(processed)[0][0]
+                except Exception as e:
+                    st.error(f"Prediction error: {e}")
+                    st.stop()
                 
             st.divider()
             
@@ -136,7 +153,9 @@ if uploaded_file is not None:
                     <p>The model identified features consistent with COPD pathology.</p>
                 </div>
                 """, unsafe_allow_html=True)
+                
                 st.error(f"Confidence Score: {conf_percent:.2f}%")
+            
             else:
                 st.markdown(f"""
                 <div class="prediction-card">
@@ -144,6 +163,7 @@ if uploaded_file is not None:
                     <p>No significant signs of COPD were detected in the provided scan.</p>
                 </div>
                 """, unsafe_allow_html=True)
+                
                 st.success(f"Confidence Score: {100 - conf_percent:.2f}%")
             
             st.write("Confidence Meter:")
