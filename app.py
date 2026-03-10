@@ -47,7 +47,7 @@ st.markdown("""
 @st.cache_resource
 def load_model():
     try:
-        model = tf.keras.models.load_model("lung_xray_model.keras", compile=False)
+        model = tf.keras.models.load_model("lung_xray_model.h5", compile=False)
         return model
     except Exception as e:
         st.error(f"Error loading model: {e}")
@@ -128,7 +128,7 @@ if uploaded_file is not None:
     if st.button("Analyze X-ray"):
         
         if model is None:
-            st.error("Model not loaded. Check your 'lung_xray_model.keras' file.")
+            st.error("Model not loaded. Check your 'lung_xray_model.h5' file.")
         
         else:
             with st.spinner('Analyzing patterns in pulmonary tissue...'):
