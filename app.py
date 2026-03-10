@@ -34,7 +34,6 @@ st.markdown("""
     .prediction-card {
         padding: 20px;
         border-radius: 10px;
-        color: blue;
         background-color: white;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         text-align: center;
@@ -161,9 +160,15 @@ if uploaded_file is not None:
 
             confidence = float(np.max(prediction)) * 100
 
+            # Dynamic color
+            if predicted_class == "Normal":
+                color = "green"
+            else:
+                color = "red"
+
             st.markdown(f"""
             <div class="prediction-card">
-                <h2>Prediction: {predicted_class}</h2>
+                <h2 style="color:{color};">Prediction: {predicted_class}</h2>
                 <p>The AI model analyzed the uploaded chest X-ray.</p>
             </div>
             """, unsafe_allow_html=True)
