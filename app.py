@@ -42,22 +42,23 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # -----------------------------
-# Load Model
+# Load TFLite Model
 # -----------------------------
 @st.cache_resource
 def load_model():
     try:
-        model = tf.keras.models.load_model(
-            "lung_xray_model_fixed.h5",
-            compile=False,
-            safe_mode=False
-        )
-        return model
+        interpreter = tf.lite.Interpreter(model_path="lung_model.tflite")
+        interpreter.allocate_tensors()
+
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+
+        return interpreter, input_details, output_details
     except Exception as e:
         st.error(f"Error loading model: {e}")
-        return None
+        return None, None, None
 
-model = load_model()
+interpreter, input_details, output_details = load_model()
 
 # -----------------------------
 # Image Preprocessing
@@ -131,8 +132,8 @@ if uploaded_file is not None:
     
     if st.button("Analyze X-ray"):
         
-        if model is None:
-            st.error("Model not loaded. Check your 'lung_xray_model_fixed.h5' file.")
+        if interpreter is None:
+            st.error("Model not loaded. Check your 'lung_model.tflite' file.")
         
         else:
             with st.spinner('Analyzing patterns in pulmonary tissue...'):
@@ -140,7 +141,9 @@ if uploaded_file is not None:
                 time.sleep(1.5)
                 
                 try:
-                    prediction = model.predict(processed)
+                    interpreter.set_tensor(input_details[0]['index'], processed.astype(np.float32))
+                    interpreter.invoke()
+                    prediction = interpreter.get_tensor(output_details[0]['index'])
                 except Exception as e:
                     st.error(f"Prediction error: {e}")
                     st.stop()
