@@ -140,38 +140,39 @@ if uploaded_file is not None:
                 time.sleep(1.5)
                 
                 try:
-                    prediction = model.predict(processed)[0][0]
+                    prediction = model.predict(processed)
                 except Exception as e:
                     st.error(f"Prediction error: {e}")
                     st.stop()
                 
             st.divider()
             
-            # Result Display
-            conf_percent = float(prediction * 100)
-            
-            if prediction > 0.5:
-                st.markdown(f"""
-                <div class="prediction-card">
-                    <h2 style="color: #d9534f;">⚠ COPD Indicators Detected</h2>
-                    <p>The model identified features consistent with COPD pathology.</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.error(f"Confidence Score: {conf_percent:.2f}%")
-            
+            # -----------------------------
+            # Multi-class Prediction Logic
+            # -----------------------------
+            classes = ["Normal", "COPD", "Pneumonia"]
+
+            class_index = np.argmax(prediction)
+            predicted_class = classes[class_index]
+
+            confidence = float(np.max(prediction)) * 100
+
+            st.markdown(f"""
+            <div class="prediction-card">
+                <h2>Prediction: {predicted_class}</h2>
+                <p>The AI model analyzed the uploaded chest X-ray.</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            if predicted_class == "Normal":
+                st.success(f"Confidence Score: {confidence:.2f}%")
+            elif predicted_class == "COPD":
+                st.error(f"Confidence Score: {confidence:.2f}%")
             else:
-                st.markdown(f"""
-                <div class="prediction-card">
-                    <h2 style="color: #5cb85c;">✅ Normal Results</h2>
-                    <p>No significant signs of COPD were detected in the provided scan.</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.success(f"Confidence Score: {100 - conf_percent:.2f}%")
-            
+                st.warning(f"Confidence Score: {confidence:.2f}%")
+
             st.write("Confidence Meter:")
-            st.progress(float(prediction))
+            st.progress(float(confidence/100))
 
 # Footer
 st.markdown("---")
